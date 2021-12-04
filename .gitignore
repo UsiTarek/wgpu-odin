@@ -1,0 +1,7 @@
+bin/
+thirdparty/
+vsession
+ols.json
+***/*.o
+***/*-gen.odin
+***/.DS_Store
