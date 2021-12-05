@@ -107,7 +107,7 @@ main :: proc () {
     device : WGPU.Device = nil
     WGPU.AdapterRequestDevice(adapter,
                             &WGPU.DeviceDescriptor {
-                                nextInChain = cast(^WGPU.ChainedStruct)&WGPU.DeviceExtras{
+                                nextInChain = auto_cast &WGPU.DeviceExtras{
                                     chain = WGPU.ChainedStruct{
                                         next = nil,
                                         sType = cast(WGPU.SType)WGPU.NativeSType.DeviceExtras,
@@ -127,12 +127,13 @@ main :: proc () {
     assert(device != nil)
     queue := WGPU.DeviceGetQueue(device)
     
-    pipeline_layout := WGPU.DeviceCreatePipelineLayout(device, &WGPU.PipelineLayoutDescriptor{
-        nextInChain = nil,
-        label = "Empty Pipeline Layout",
-        bindGroupLayouts = nil,
-        bindGroupLayoutCount = 0,
-    })
+    pipeline_layout := WGPU.DeviceCreatePipelineLayout(
+        device, 
+        &WGPU.PipelineLayoutDescriptor{
+            label = "Empty Pipeline Layout",
+            bindGroupLayouts = {},
+        },
+    )
     
     read_content, read_ok := os.read_entire_file_from_filename("examples/example_shader.wgsl"); 
     if !read_ok {
@@ -150,42 +151,41 @@ main :: proc () {
         label = "Quad Shader Module",
     })
 
-    attributes := []WGPU.VertexAttribute {
-                    {
-                        format = WGPU.VertexFormat.Float32x2,
-                        offset = cast(u64)offset_of(Vertex, pos),
-                        shaderLocation = 0,
-                    },
-                    {
-                        format = WGPU.VertexFormat.Float32x4,
-                        offset = cast(u64)offset_of(Vertex, color),
-                        shaderLocation = 1,
-                    },
-                }
-
     render_pipeline := WGPU.DeviceCreateRenderPipeline(device, &WGPU.RenderPipelineDescriptor{
         label = "Quad Render Pipeline",
         layout = pipeline_layout,
-        vertex = WGPU.VertexState {
+        vertex = WGPU.VertexState{
             module = shader_module,
             entryPoint = "vs_main",
-            bufferCount = 1,
-            buffers = &WGPU.VertexBufferLayout{
-                arrayStride = size_of(Vertex),
-                stepMode = WGPU.VertexStepMode.Vertex,
-                attributeCount = 2,
-                attributes = cast(^WGPU.VertexAttribute)&attributes[0],
+            buffers = []WGPU.VertexBufferLayout{
+                {
+                    arrayStride = size_of(Vertex),
+                    stepMode = WGPU.VertexStepMode.Vertex,
+                    attributes = []WGPU.VertexAttribute {
+                        {
+                            format = WGPU.VertexFormat.Float32x2,
+                            offset = cast(u64)offset_of(Vertex, pos),
+                            shaderLocation = 0,
+                        },
+                        {
+                            format = WGPU.VertexFormat.Float32x4,
+                            offset = cast(u64)offset_of(Vertex, color),
+                            shaderLocation = 1,
+                        },
+                    },
+                },
             },
         },
         fragment = &{
             module = shader_module,
             entryPoint = "fs_main",
-            targetCount = 1,
-            targets = &{
+            targets = []WGPU.ColorTargetState{
+                {
                     nextInChain = nil,
                     format = WGPU.TextureFormat.BGRA8UnormSrgb,
                     blend = nil,
                     writeMask = u32(WGPU.ColorWriteMask.All),
+                },
             },
         },
         primitive = {
@@ -217,7 +217,7 @@ main :: proc () {
     
     vertices := VERTICES
     WGPU.QueueWriteBuffer(queue, vert_buffer, 0, &vertices, size_of(vertices))
-    WGPU.QueueSubmit(queue, 0, nil)
+    WGPU.QueueSubmit(queue, []WGPU.CommandBuffer{})
     
     main_loop: for {
         for e: SDL.Event; SDL.PollEvent(&e) != 0; {
@@ -229,21 +229,28 @@ main :: proc () {
         
         current_view := WGPU.SwapChainGetCurrentTextureView(swapchain)
         
-        cmd_encoder := WGPU.DeviceCreateCommandEncoder(device, &WGPU.CommandEncoderDescriptor{
-            label = "Main Command Encoder",
-        })
-        
-        render_pass := WGPU.CommandEncoderBeginRenderPass(cmd_encoder, 
+        cmd_encoder := WGPU.DeviceCreateCommandEncoder(
+            device, 
+            &WGPU.CommandEncoderDescriptor{
+                label = "Main Command Encoder",
+            },
+        )
+
+        render_pass := WGPU.CommandEncoderBeginRenderPass(
+            cmd_encoder, 
             &WGPU.RenderPassDescriptor{
                 label = "Main Render Pass",
-                colorAttachmentCount = 1,
-                colorAttachments = &WGPU.RenderPassColorAttachment{
-                    view = current_view,
-                    loadOp = WGPU.LoadOp.Clear,
-                    storeOp = WGPU.StoreOp.Store,
-                    clearColor = WGPU.Color{ 0.1, 0.1, 0.25, 1.0 },
+                colorAttachments = []WGPU.RenderPassColorAttachment{
+                    {
+                        view = current_view,
+                        loadOp = WGPU.LoadOp.Clear,
+                        storeOp = WGPU.StoreOp.Store,
+                        clearColor = WGPU.Color{ 0.1, 0.1, 0.25, 1.0 },
+                    },
                 },
-            })
+            },
+        )
+
         WGPU.RenderPassEncoderSetPipeline(render_pass, render_pipeline)
         WGPU.RenderPassEncoderSetVertexBuffer(render_pass, 0, vert_buffer, 0, 0)
         WGPU.RenderPassEncoderDraw(render_pass, 6, 1, 0, 0)
@@ -252,7 +259,7 @@ main :: proc () {
         cmd_buffer := WGPU.CommandEncoderFinish(cmd_encoder, &WGPU.CommandBufferDescriptor{
             label = "Main Command Buffer",
         })
-        WGPU.QueueSubmit(queue, 1, &cmd_buffer);
+        WGPU.QueueSubmit(queue, []WGPU.CommandBuffer{cmd_buffer});
 
         WGPU.SwapChainPresent(swapchain)
     }

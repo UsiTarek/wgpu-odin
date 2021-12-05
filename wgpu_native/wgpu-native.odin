@@ -120,7 +120,7 @@ ProcAdapterHasFeature :: #type proc(
 
 ProcAdapterRequestDevice :: #type proc(
     adapter : Adapter,
-    descriptor : ^DeviceDescriptor,
+    descriptor : ^DeviceDescriptorC,
     callback : RequestDeviceCallback,
     userdata : rawptr,
 )
@@ -157,7 +157,7 @@ ProcCommandEncoderBeginComputePass :: #type proc(
 
 ProcCommandEncoderBeginRenderPass :: #type proc(
     commandEncoder : CommandEncoder,
-    descriptor : ^RenderPassDescriptor,
+    descriptor : ^RenderPassDescriptorC,
 ) -> RenderPassEncoder
 
 ProcCommandEncoderCopyBufferToBuffer :: #type proc(
@@ -280,7 +280,7 @@ ProcComputePipelineSetLabel :: #type proc(
 )
 ProcDeviceCreateBindGroup :: #type proc(
     device : Device,
-    descriptor : ^BindGroupDescriptor,
+    descriptor : ^BindGroupDescriptorC,
 ) -> BindGroup
 ProcDeviceCreateBindGroupLayout :: #type proc(
     device : Device,
@@ -296,33 +296,33 @@ ProcDeviceCreateCommandEncoder :: #type proc(
 ) -> CommandEncoder
 ProcDeviceCreateComputePipeline :: #type proc(
     device : Device,
-    descriptor : ^ComputePipelineDescriptor,
+    descriptor : ^ComputePipelineDescriptorC,
 ) -> ComputePipeline
 ProcDeviceCreateComputePipelineAsync :: #type proc(
     device : Device,
-    descriptor : ^ComputePipelineDescriptor,
+    descriptor : ^ComputePipelineDescriptorC,
     callback : CreateComputePipelineAsyncCallback,
     userdata : rawptr,
 )
 ProcDeviceCreatePipelineLayout :: #type proc(
     device : Device,
-    descriptor : ^PipelineLayoutDescriptor,
+    descriptor : ^PipelineLayoutDescriptorC,
 ) -> PipelineLayout
 ProcDeviceCreateQuerySet :: #type proc(
     device : Device,
-    descriptor : ^QuerySetDescriptor,
+    descriptor : ^QuerySetDescriptorC,
 ) -> QuerySet
 ProcDeviceCreateRenderBundleEncoder :: #type proc(
     device : Device,
-    descriptor : ^RenderBundleEncoderDescriptor,
+    descriptor : ^RenderBundleEncoderDescriptorC,
 ) -> RenderBundleEncoder
 ProcDeviceCreateRenderPipeline :: #type proc(
     device : Device,
-    descriptor : ^RenderPipelineDescriptor,
+    descriptor : ^RenderPipelineDescriptorC,
 ) -> RenderPipeline
 ProcDeviceCreateRenderPipelineAsync :: #type proc(
     device : Device,
-    descriptor : ^RenderPipelineDescriptor,
+    descriptor : ^RenderPipelineDescriptorC,
     callback : CreateRenderPipelineAsyncCallback,
     userdata : rawptr,
 )
@@ -1208,7 +1208,7 @@ Origin3D :: struct {
     z : u32,
 }
 
-PipelineLayoutDescriptor :: struct {
+PipelineLayoutDescriptorC :: struct {
     nextInChain : ^ChainedStruct,
     label : cstring,
     bindGroupLayoutCount : u32,
@@ -1228,7 +1228,7 @@ PrimitiveState :: struct {
     cullMode : CullMode,
 }
 
-QuerySetDescriptor :: struct {
+QuerySetDescriptorC :: struct {
     nextInChain : ^ChainedStruct,
     label : cstring,
     type : QueryType,
@@ -1242,7 +1242,7 @@ RenderBundleDescriptor :: struct {
     label : cstring,
 }
 
-RenderBundleEncoderDescriptor :: struct {
+RenderBundleEncoderDescriptorC :: struct {
     nextInChain : ^ChainedStruct,
     label : cstring,
     colorFormatsCount : u32,
@@ -1389,7 +1389,7 @@ VertexAttribute :: struct {
     shaderLocation : u32,
 }
 
-BindGroupDescriptor :: struct {
+BindGroupDescriptorC :: struct {
     nextInChain : ^ChainedStruct,
     label : cstring,
     layout : BindGroupLayout,
@@ -1446,7 +1446,7 @@ ImageCopyTexture :: struct {
     aspect : TextureAspect,
 }
 
-ProgrammableStageDescriptor :: struct {
+ProgrammableStageDescriptorC :: struct {
     nextInChain : ^ChainedStruct,
     module : ShaderModule,
     entryPoint : cstring,
@@ -1483,7 +1483,7 @@ TextureDescriptor :: struct {
     sampleCount : u32,
 }
 
-VertexBufferLayout :: struct {
+VertexBufferLayoutC :: struct {
     arrayStride : u64,
     stepMode : VertexStepMode,
     attributeCount : u32,
@@ -1504,21 +1504,21 @@ ColorTargetState :: struct {
     writeMask : ColorWriteMaskFlags,
 }
 
-ComputePipelineDescriptor :: struct {
+ComputePipelineDescriptorC :: struct {
     nextInChain : ^ChainedStruct,
     label : cstring,
     layout : PipelineLayout,
-    compute : ProgrammableStageDescriptor,
+    compute : ProgrammableStageDescriptorC,
 }
 
-DeviceDescriptor :: struct {
+DeviceDescriptorC :: struct {
     nextInChain : ^ChainedStruct,
     requiredFeaturesCount : u32,
     requiredFeatures : [^]FeatureName,
     requiredLimits : ^RequiredLimits,
 }
 
-RenderPassDescriptor :: struct {
+RenderPassDescriptorC :: struct {
     nextInChain : ^ChainedStruct,
     label : cstring,
     colorAttachmentCount : u32,
@@ -1527,17 +1527,17 @@ RenderPassDescriptor :: struct {
     occlusionQuerySet : QuerySet,
 }
 
-VertexState :: struct {
+VertexStateC :: struct {
     nextInChain : ^ChainedStruct,
     module : ShaderModule,
     entryPoint : cstring,
     constantCount : u32,
     constants : [^]ConstantEntry,
     bufferCount : u32,
-    buffers : [^]VertexBufferLayout,
+    buffers : [^]VertexBufferLayoutC,
 }
 
-FragmentState :: struct {
+FragmentStateC :: struct {
     nextInChain : ^ChainedStruct,
     module : ShaderModule,
     entryPoint : cstring,
@@ -1547,15 +1547,15 @@ FragmentState :: struct {
     targets : ^ColorTargetState,
 }
 
-RenderPipelineDescriptor :: struct {
+RenderPipelineDescriptorC :: struct {
     nextInChain : ^ChainedStruct,
     label : cstring,
     layout : PipelineLayout,
-    vertex : VertexState,
+    vertex : VertexStateC,
     primitive : PrimitiveState,
     depthStencil : ^DepthStencilState,
     multisample : MultisampleState,
-    fragment : ^FragmentState,
+    fragment : ^FragmentStateC,
 }
 
 @(default_calling_convention="c", link_prefix="wgpu")
@@ -1582,13 +1582,6 @@ foreign lib {
         adapter : Adapter,
         feature : FeatureName,
     ) -> bool ---
-
-    AdapterRequestDevice :: proc(
-        adapter : Adapter,
-        descriptor : ^DeviceDescriptor,
-        callback : RequestDeviceCallback,
-        userdata : rawptr,
-    ) ---
 
     BufferDestroy :: proc(buffer : Buffer) ---
 
@@ -1619,11 +1612,6 @@ foreign lib {
         commandEncoder : CommandEncoder,
         descriptor : ^ComputePassDescriptor,
     ) -> ComputePassEncoder ---
-
-    CommandEncoderBeginRenderPass :: proc(
-        commandEncoder : CommandEncoder,
-        descriptor : ^RenderPassDescriptor,
-    ) -> RenderPassEncoder ---
 
     CommandEncoderCopyBufferToBuffer :: proc(
         commandEncoder : CommandEncoder,
@@ -1722,14 +1710,6 @@ foreign lib {
         groupLabel : cstring,
     ) ---
 
-    ComputePassEncoderSetBindGroup :: proc(
-        computePassEncoder : ComputePassEncoder,
-        groupIndex : u32,
-        group : BindGroup,
-        dynamicOffsetCount : u32,
-        dynamicOffsets : ^u32,
-    ) ---
-
     ComputePassEncoderSetPipeline :: proc(
         computePassEncoder : ComputePassEncoder,
         pipeline : ComputePipeline,
@@ -1751,11 +1731,6 @@ foreign lib {
         label : cstring,
     ) ---
 
-    DeviceCreateBindGroup :: proc(
-        device : Device,
-        descriptor : ^BindGroupDescriptor,
-    ) -> BindGroup ---
-
     DeviceCreateBindGroupLayout :: proc(
         device : Device,
         descriptor : ^BindGroupLayoutDescriptor,
@@ -1770,45 +1745,6 @@ foreign lib {
         device : Device,
         descriptor : ^CommandEncoderDescriptor,
     ) -> CommandEncoder ---
-
-    DeviceCreateComputePipeline :: proc(
-        device : Device,
-        descriptor : ^ComputePipelineDescriptor,
-    ) -> ComputePipeline ---
-
-    DeviceCreateComputePipelineAsync :: proc(
-        device : Device,
-        descriptor : ^ComputePipelineDescriptor,
-        callback : CreateComputePipelineAsyncCallback,
-        userdata : rawptr,
-    ) ---
-
-    DeviceCreatePipelineLayout :: proc(
-        device : Device,
-        descriptor : ^PipelineLayoutDescriptor,
-    ) -> PipelineLayout ---
-
-    DeviceCreateQuerySet :: proc(
-        device : Device,
-        descriptor : ^QuerySetDescriptor,
-    ) -> QuerySet ---
-
-    DeviceCreateRenderBundleEncoder :: proc(
-        device : Device,
-        descriptor : ^RenderBundleEncoderDescriptor,
-    ) -> RenderBundleEncoder ---
-
-    DeviceCreateRenderPipeline :: proc(
-        device : Device,
-        descriptor : ^RenderPipelineDescriptor,
-    ) -> RenderPipeline ---
-
-    DeviceCreateRenderPipelineAsync :: proc(
-        device : Device,
-        descriptor : ^RenderPipelineDescriptor,
-        callback : CreateRenderPipelineAsyncCallback,
-        userdata : rawptr,
-    ) ---
 
     DeviceCreateSampler :: proc(
         device : Device,
@@ -1884,12 +1820,6 @@ foreign lib {
         signalValue : u64,
         callback : QueueWorkDoneCallback,
         userdata : rawptr,
-    ) ---
-
-    QueueSubmit :: proc(
-        queue : Queue,
-        commandCount : u32,
-        commands : ^CommandBuffer,
     ) ---
 
     QueueWriteBuffer :: proc(
@@ -2141,5 +2071,92 @@ foreign lib {
     ) -> TextureView ---
 
     TextureDestroy :: proc(texture : Texture) ---
+
+}
+
+@(default_calling_convention="c")
+foreign lib {
+    @(link_name="wgpuDeviceCreatePipelineLayout")
+    DeviceCreatePipelineLayoutC :: proc(
+        device : Device,
+        descriptor : ^PipelineLayoutDescriptorC,
+    ) -> PipelineLayout ---
+
+    @(link_name="wgpuDeviceCreateQuerySet")
+    DeviceCreateQuerySetC :: proc(
+        device : Device,
+        descriptor : ^QuerySetDescriptorC,
+    ) -> QuerySet ---
+
+    @(link_name="wgpuComputePassEncoderSetBindGroup")
+    ComputePassEncoderSetBindGroupC :: proc(
+        computePassEncoder : ComputePassEncoder,
+        groupIndex : u32,
+        group : BindGroup,
+        dynamicOffsetCount : u32,
+        dynamicOffsets : ^u32,
+    ) ---
+    
+    @(link_name="wgpuQueueSubmit")
+    QueueSubmitC :: proc(
+        queue : Queue,
+        commandCount : u32,
+        commands : ^CommandBuffer,
+    ) ---
+
+    @(link_name="wgpuDeviceCreateRenderBundleEncoder")
+    DeviceCreateRenderBundleEncoderC :: proc(
+        device : Device,
+        descriptor : ^RenderBundleEncoderDescriptorC,
+    ) -> RenderBundleEncoder ---
+    
+    
+    @(link_name="wgpuDeviceCreateComputePipeline")
+    DeviceCreateComputePipelineC :: proc(
+        device : Device,
+        descriptor : ^ComputePipelineDescriptorC,
+    ) -> ComputePipeline ---
+
+    @(link_name="wgpuDeviceCreateComputePipelineAsync")
+    DeviceCreateComputePipelineAsyncC :: proc(
+        device : Device,
+        descriptor : ^ComputePipelineDescriptorC,
+        callback : CreateComputePipelineAsyncCallback,
+        userdata : rawptr,
+    ) ---
+
+    @(link_name="wgpuDeviceCreateBindGroup")
+    DeviceCreateBindGroupC :: proc(
+        device : Device,
+        descriptor : ^BindGroupDescriptorC,
+    ) -> BindGroup ---
+    
+    @(link_name="wgpuDeviceCreateRenderPipeline")
+    DeviceCreateRenderPipelineC :: proc(
+        device : Device,
+        descriptor : ^RenderPipelineDescriptorC,
+    ) -> RenderPipeline ---
+
+    @(link_name="wgpuDeviceCreateRenderPipelineAsync")
+    DeviceCreateRenderPipelineAsyncC :: proc(
+        device : Device,
+        descriptor : ^RenderPipelineDescriptorC,
+        callback : CreateRenderPipelineAsyncCallback,
+        userdata : rawptr,
+    ) ---
+    
+    @(link_name="wgpuAdapterRequestDevice")
+    AdapterRequestDeviceC :: proc(
+        adapter : Adapter,
+        descriptor : ^DeviceDescriptorC,
+        callback : RequestDeviceCallback,
+        userdata : rawptr,
+    ) ---
+
+    @(link_name="wgpuCommandEncoderBeginRenderPass")
+    CommandEncoderBeginRenderPassC :: proc(
+        commandEncoder : CommandEncoder,
+        descriptor : ^RenderPassDescriptorC,
+    ) -> RenderPassEncoder ---
 
 }
