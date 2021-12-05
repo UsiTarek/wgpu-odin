@@ -150,6 +150,7 @@ main :: proc () {
         },
         label = "Quad Shader Module",
     })
+    defer WGPU.ShaderModuleDrop(shader_module)
 
     render_pipeline := WGPU.DeviceCreateRenderPipeline(device, &WGPU.RenderPipelineDescriptor{
         label = "Quad Render Pipeline",
@@ -157,11 +158,11 @@ main :: proc () {
         vertex = WGPU.VertexState{
             module = shader_module,
             entryPoint = "vs_main",
-            buffers = []WGPU.VertexBufferLayout{
+            buffers = {
                 {
                     arrayStride = size_of(Vertex),
                     stepMode = WGPU.VertexStepMode.Vertex,
-                    attributes = []WGPU.VertexAttribute {
+                    attributes = {
                         {
                             format = WGPU.VertexFormat.Float32x2,
                             offset = cast(u64)offset_of(Vertex, pos),
@@ -179,7 +180,7 @@ main :: proc () {
         fragment = &{
             module = shader_module,
             entryPoint = "fs_main",
-            targets = []WGPU.ColorTargetState{
+            targets = {
                 {
                     nextInChain = nil,
                     format = WGPU.TextureFormat.BGRA8UnormSrgb,
@@ -198,13 +199,16 @@ main :: proc () {
             alphaToCoverageEnabled = false,
         },
     })
+    defer WGPU.RenderPipelineDrop(render_pipeline)
     
+    w, h : i32 = 0, 0
+    SDL.GetWindowSize(window, &w, &h)
     swapchain := WGPU.DeviceCreateSwapChain(device, surface, &(WGPU.SwapChainDescriptor){
         label = "Swapchain",
         usage = WGPU.TextureUsageFlags(WGPU.TextureUsage.RenderAttachment),
         format = WGPU.TextureFormat.BGRA8UnormSrgb,
-        width = 800,
-        height = 600,
+        width = auto_cast w,
+        height = auto_cast h,
         presentMode = WGPU.PresentMode.Fifo,
     })
     
@@ -214,6 +218,7 @@ main :: proc () {
              WGPU.BufferUsageFlags(WGPU.BufferUsage.CopyDst),
         size = size_of(Vertex) * 6, 
     })
+    defer WGPU.BufferDestroy(vert_buffer)
     
     vertices := VERTICES
     WGPU.QueueWriteBuffer(queue, vert_buffer, 0, &vertices, size_of(vertices))
@@ -240,7 +245,7 @@ main :: proc () {
             cmd_encoder, 
             &WGPU.RenderPassDescriptor{
                 label = "Main Render Pass",
-                colorAttachments = []WGPU.RenderPassColorAttachment{
+                colorAttachments = {
                     {
                         view = current_view,
                         loadOp = WGPU.LoadOp.Clear,
@@ -250,10 +255,9 @@ main :: proc () {
                 },
             },
         )
-
         WGPU.RenderPassEncoderSetPipeline(render_pass, render_pipeline)
         WGPU.RenderPassEncoderSetVertexBuffer(render_pass, 0, vert_buffer, 0, 0)
-        WGPU.RenderPassEncoderDraw(render_pass, 6, 1, 0, 0)
+        WGPU.RenderPassEncoderDraw(render_pass, len(VERTICES), 1, 0, 0)
         WGPU.RenderPassEncoderEndPass(render_pass)
 
         cmd_buffer := WGPU.CommandEncoderFinish(cmd_encoder, &WGPU.CommandBufferDescriptor{
