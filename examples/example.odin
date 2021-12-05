@@ -12,6 +12,7 @@ when ODIN_OS == "darwin" {
 
 when ODIN_OS == "windows" {
     WGPU_BACKEND_TYPE :: WGPU.BackendType.D3D12
+    import "core:sys/win32"
 }
 
 when ODIN_OS == "linux" {
@@ -78,18 +79,41 @@ main :: proc () {
         {.SHOWN, .METAL })
     defer SDL.DestroyWindow(window)
     
-    metalView := SDL.Metal_CreateView(window)
-    defer SDL.Metal_DestroyView(metalView)
-    
-    surface := WGPU.InstanceCreateSurface(nil, &WGPU.SurfaceDescriptor{
-        nextInChain = cast(^WGPU.ChainedStruct) &WGPU.SurfaceDescriptorFromMetalLayer{
-            layer = SDL.Metal_GetLayer(metalView),
-            chain = {
-                next = nil,
-                sType = WGPU.SType.SurfaceDescriptorFromMetalLayer,
+    when ODIN_OS == "darwin" {
+        metalView := SDL.Metal_CreateView(window)
+        defer SDL.Metal_DestroyView(metalView)
+        
+        surface := WGPU.InstanceCreateSurface(nil, &WGPU.SurfaceDescriptor{
+            nextInChain = cast(^WGPU.ChainedStruct) &WGPU.SurfaceDescriptorFromMetalLayer{
+                layer = SDL.Metal_GetLayer(metalView),
+                chain = {
+                    next = nil,
+                    sType = WGPU.SType.SurfaceDescriptorFromMetalLayer,
+                },
             },
-        },
-    })
+        })
+    }
+
+    when ODIN_OS == "windows" {
+        wmInfo: SDL_SysWMinfo = ---
+        SDL.VERSION(&wmInfo.version);
+        SDL.GetWindowWMInfo(window, &wmInfo);
+        hwnd := wmInfo.info.win.window;
+        hinstance := win32.GetModuleHandleA(nil)
+
+        surface = wgpuInstanceCreateSurface(NULL, &(WGPU.SurfaceDescriptor) {
+            .label = NULL,
+            .nextInChain = auto_cast &(WGPU.SurfaceDescriptorFromWindowsHWND) {
+                .chain = (WGPU.ChainedStruct) {
+                    .next = NULL,
+                    .sType = WGPU.SType.SurfaceDescriptorFromWindowsHWND,
+                },
+                .hinstance = hinstance,
+                .hwnd = hwnd,
+            },
+        });
+    }
+
     assert(surface != nil)
     
     adapter : WGPU.Adapter = nil
