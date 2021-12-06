@@ -16,7 +16,7 @@ EXTRA_LINKER_FLAGS := -Lthirdparty/wgpu-native/target/x86_64-apple-darwin/releas
 					  -L/usr/local/homebrew/opt/sdl2/lib/
 else ifeq ($(detected_OS),Windows)
 DEFAULT_WINDOWS_LIBS := Ws2_32.lib AdvAPI32.lib Userenv.lib Bcrypt.lib User32.lib  
-EXTRA_LINKER_FLAGS := $(DEFAULT_WINDOWS_LIBS)
+EXTRA_LINKER_FLAGS := $(DEFAULT_WINDOWS_LIBS) d3dcompiler.lib
 endif
 
 main:

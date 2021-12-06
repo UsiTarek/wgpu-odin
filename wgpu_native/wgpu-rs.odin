@@ -2,7 +2,6 @@ package wgpu_native
 
 when ODIN_OS == "windows" {
     foreign import lib "wgpu_native.lib"
-    foreign import "d3dcompiler.lib"
 }else {
     foreign import lib "system:wgpu_native"
 }
