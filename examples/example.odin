@@ -70,13 +70,19 @@ main :: proc () {
     err := SDL.Init({.VIDEO})
     assert(err == 0)
     
+    when ODIN_OS == "darwin" {
+        flags := SDL.WindowFlags{.METAL}
+    }
+    
     window := SDL.CreateWindow(
         " Example Triangle Window",
         SDL.WINDOWPOS_CENTERED,
         SDL.WINDOWPOS_CENTERED,
         800,
         600,
-        {.SHOWN, .METAL })
+        flags,
+    )
+
     defer SDL.DestroyWindow(window)
     
     when ODIN_OS == "darwin" {
@@ -84,6 +90,7 @@ main :: proc () {
         defer SDL.Metal_DestroyView(metalView)
         
         surface := WGPU.InstanceCreateSurface(nil, &WGPU.SurfaceDescriptor{
+            label = "Metal Surface",
             nextInChain = cast(^WGPU.ChainedStruct) &WGPU.SurfaceDescriptorFromMetalLayer{
                 layer = SDL.Metal_GetLayer(metalView),
                 chain = {
@@ -92,24 +99,21 @@ main :: proc () {
                 },
             },
         })
-    }
-
-    when ODIN_OS == "windows" {
+    }else when ODIN_OS == "windows" {
         wmInfo: SDL_SysWMinfo = ---
-        SDL.VERSION(&wmInfo.version);
         SDL.GetWindowWMInfo(window, &wmInfo);
         hwnd := wmInfo.info.win.window;
-        hinstance := win32.GetModuleHandleA(nil)
+        hinstance := win32.get_module_handle_a(nil)
 
-        surface = wgpuInstanceCreateSurface(NULL, &(WGPU.SurfaceDescriptor) {
-            .label = NULL,
-            .nextInChain = auto_cast &(WGPU.SurfaceDescriptorFromWindowsHWND) {
-                .chain = (WGPU.ChainedStruct) {
-                    .next = NULL,
-                    .sType = WGPU.SType.SurfaceDescriptorFromWindowsHWND,
+        surface = WGPU.InstanceCreateSurface(nil, &(WGPU.SurfaceDescriptor) {
+            label = "Windows Surface",
+            nextInChain = auto_cast &WGPU.SurfaceDescriptorFromWindowsHWND{
+                chain = (WGPU.ChainedStruct) {
+                    next = nil,
+                    sType = WGPU.SType.SurfaceDescriptorFromWindowsHWND,
                 },
-                .hinstance = hinstance,
-                .hwnd = hwnd,
+                hinstance = hinstance,
+                hwnd = hwnd,
             },
         });
     }
