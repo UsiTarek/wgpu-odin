@@ -83,7 +83,6 @@ main :: proc () {
         600,
         flags,
     )
-
     defer SDL.DestroyWindow(window)
     
     when ODIN_OS == "darwin" {
