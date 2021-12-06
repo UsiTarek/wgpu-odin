@@ -1,7 +1,11 @@
 package wgpu_native
 
  // -lwgpu_native
-foreign import lib "system:wgpu_native"
+when ODIN_OS == "windows" {
+    foreign import lib "wgpu_native.lib"
+}else {
+    foreign import lib "system:wgpu_native"
+}
 
 import _c "core:c"
 

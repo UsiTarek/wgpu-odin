@@ -70,8 +70,9 @@ main :: proc () {
     err := SDL.Init({.VIDEO})
     assert(err == 0)
     
+    flags : SDL.WindowFlags
     when ODIN_OS == "darwin" {
-        flags := SDL.WindowFlags{.METAL}
+        flags = SDL.WindowFlags{.METAL}
     }
     
     window := SDL.CreateWindow(
@@ -100,12 +101,12 @@ main :: proc () {
             },
         })
     }else when ODIN_OS == "windows" {
-        wmInfo: SDL_SysWMinfo = ---
+        wmInfo: SDL.SysWMinfo = ---
         SDL.GetWindowWMInfo(window, &wmInfo);
         hwnd := wmInfo.info.win.window;
         hinstance := win32.get_module_handle_a(nil)
 
-        surface = WGPU.InstanceCreateSurface(nil, &(WGPU.SurfaceDescriptor) {
+        surface := WGPU.InstanceCreateSurface(nil, &(WGPU.SurfaceDescriptor) {
             label = "Windows Surface",
             nextInChain = auto_cast &WGPU.SurfaceDescriptorFromWindowsHWND{
                 chain = (WGPU.ChainedStruct) {

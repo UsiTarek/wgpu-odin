@@ -1,6 +1,10 @@
 package wgpu_native
 
-foreign import wgpu "system:wgpu_native"
+when ODIN_OS == "windows" {
+    foreign import lib "wgpu_native.lib"
+}else {
+    foreign import lib "system:wgpu_native"
+}
 
 import _c "core:c"
 
@@ -42,7 +46,7 @@ DeviceExtras :: struct {
 }
 
 @(default_calling_convention="c", link_prefix="wgpu")
-foreign wgpu {
+foreign lib {
 
     DevicePoll :: proc(
         device : Device,
