@@ -1,4 +1,4 @@
-package example
+package examples
 
 import "core:fmt"
 import "core:os"
@@ -66,6 +66,13 @@ VERTICES :: [6]Vertex {
     { pos = { 1.0,  1.0}, color = { 0.0, 0.0, 1.0, 1.0 } },
 }
 
+error_callback :: proc(
+    level : WGPU.LogLevel,
+    msg : cstring,
+) {
+    fmt.println(msg)
+}
+
 main :: proc () {
     err := SDL.Init({.VIDEO})
     assert(err == 0)
@@ -76,7 +83,7 @@ main :: proc () {
     }
     
     window := SDL.CreateWindow(
-        " Example Triangle Window",
+        "Example Triangle Window",
         SDL.WINDOWPOS_CENTERED,
         SDL.WINDOWPOS_CENTERED,
         800,
@@ -85,6 +92,9 @@ main :: proc () {
     )
     defer SDL.DestroyWindow(window)
     
+    WGPU.SetLogCallback(error_callback)
+    WGPU.SetLogLevel(WGPU.LogLevel.Warn)
+
     when ODIN_OS == "darwin" {
         metalView := SDL.Metal_CreateView(window)
         defer SDL.Metal_DestroyView(metalView)
@@ -163,7 +173,7 @@ main :: proc () {
         },
     )
     
-    read_content, read_ok := os.read_entire_file_from_filename("examples/example_shader.wgsl"); 
+    read_content, read_ok := os.read_entire_file_from_filename("examples/quad.wgsl"); 
     if !read_ok {
         panic("Could not open or read file.")
     }
