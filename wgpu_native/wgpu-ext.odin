@@ -54,6 +54,12 @@ BindGroupDescriptor :: struct {
     entries : []BindGroupEntry,
 }
 
+BindGroupLayoutDescriptor :: struct {
+    nextInChain : ^ChainedStruct,
+    label : cstring,
+    entries : []BindGroupLayoutEntry,
+}
+
 ProgrammableStageDescriptor :: struct {
     nextInChain : ^ChainedStruct,
     module : ShaderModule,
@@ -345,6 +351,24 @@ DeviceCreatePipelineLayoutSlice :: proc(
     )
 }
 
+DeviceCreateBindGroupLayoutSlice :: proc(
+    device : Device,
+    descriptor : ^BindGroupLayoutDescriptor,
+) -> BindGroupLayout {
+    entries, entriesCount := slice_to_ptr(descriptor.entries)
+    
+    return DeviceCreateBindGroupLayoutC(
+        device,
+        &BindGroupLayoutDescriptorC{
+            nextInChain = descriptor.nextInChain,
+            label = descriptor.label,
+            entryCount = auto_cast entriesCount,
+            entries = entries,
+        },
+    )
+}
+
+
 DeviceCreateComputePipelineSlice :: proc(
         device : Device,
         descriptor : ^ComputePipelineDescriptor,
@@ -467,6 +491,11 @@ DeviceCreateQuerySet :: proc {
     DeviceCreateQuerySetC,
 }
 
+DeviceCreateBindGroupLayout :: proc {
+    DeviceCreateBindGroupLayoutSlice,
+    DeviceCreateBindGroupLayoutC,
+}
+
 QueueSubmit :: proc {
     QueueSubmitSlice,
     QueueSubmitC,
@@ -497,5 +526,4 @@ DeviceCreateComputePipelineAsync :: proc {
     DeviceCreateComputePipelineAsyncC,
 }
 
-//BindGroupLayoutDescriptorSlice :: struct {}
 //DeviceDescriptorSlice :: struct {}

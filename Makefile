@@ -34,13 +34,14 @@ CARGO_TARGET := $(TARGET_ARCH)-$(TARGET_PLATFORM)-$(CARGO_TARGET_OS)
 CARGO_BUILD := cargo build --target=$(CARGO_TARGET)
 CARGO_PROFILE := debug
 
-## -- WGPU-Native -- ##
+## Rust -- WGPU-Native -- ##
+
 CARGO_WGPU_NATIVE_PATH := thirdparty/wgpu-native
 
 ifeq ($(detected_OS),Windows)
-CARGO_BUILD_WGPU_NATIVE_POST := && cp -u 																			 \
-								   $(CARGO_WGPU_NATIVE_PATH)/target/$(CARGO_TARGET)/$(CARGO_PROFILE)/wgpu_native.lib \
-								   wgpu_native/wgpu_native.lib
+CARGO_BUILD_WGPU_NATIVE_POST := && cp -u 																		  \
+								$(CARGO_WGPU_NATIVE_PATH)/target/$(CARGO_TARGET)/$(CARGO_PROFILE)/wgpu_native.lib \
+								wgpu_native/wgpu_native.lib
 endif
 
 CARGO_BUILD_WGPU_NATIVE := pushd $(CARGO_WGPU_NATIVE_PATH) && $(CARGO_BUILD) && popd $(CARGO_BUILD_WGPU_NATIVE_POST)
@@ -69,35 +70,42 @@ ODIN_DEFAULT_WIN32_LIBS := Ws2_32.lib AdvAPI32.lib Userenv.lib Bcrypt.lib User32
 ODIN_EXTRA_LINKER_FLAGS := $(ODIN_DEFAULT_WIN32_LIBS) d3dcompiler.lib
 endif
 
+ifeq ($(example_name),)
 ODIN_EXAMPLE_BIN_NAME :=quad
-ODIN_EXAMPLE_BIN_PATH := bin/example
+else
+ODIN_EXAMPLE_BIN_NAME :=$(example_name)
+endif
+
+ODIN_EXAMPLE_BIN_PATH := bin/examples/$(CARGO_PROFILE)/$(ODIN_EXAMPLE_BIN_NAME)
 ODIN_RUN_EXAMPLE_CMD_PRE := mkdir -p $(ODIN_EXAMPLE_BIN_PATH)
-ODIN_RUN_EXAMPLE_CMD := $(ODIN_RUN_EXAMPLE_CMD_PRE) &&								\
-						odin run 													\
-						examples/$(ODIN_EXAMPLE_BIN_NAME).odin 						\
-						-debug 														\
-						-target=$(TARGET_OS)_$(ODIN_TARGET_ARCH)  					\
-						-extra-linker-flags="$(ODIN_EXTRA_LINKER_FLAGS)" 			\
+ODIN_RUN_EXAMPLE_CMD := $(ODIN_RUN_EXAMPLE_CMD_PRE) &&									\
+						odin run 														\
+						examples/$(ODIN_EXAMPLE_BIN_NAME)/$(ODIN_EXAMPLE_BIN_NAME).odin \
+						-debug 															\
+						-target=$(TARGET_OS)_$(ODIN_TARGET_ARCH)  						\
+						-extra-linker-flags="$(ODIN_EXTRA_LINKER_FLAGS)" 				\
 						-out="$(ODIN_EXAMPLE_BIN_PATH)/$(ODIN_EXAMPLE_BIN_NAME)"
 						
-ODIN_BUILD_EXAMPLE_CMD := mkdir -p bin/$(CARGO_PROFILE)/ && \
-odin build													\
-wgpu_native/												\
--no-entry-point												\
--build-mode=shared											\
--debug 														\
--target=$(TARGET_OS)_$(ODIN_TARGET_ARCH)  					\
--extra-linker-flags="$(ODIN_EXTRA_LINKER_FLAGS)" 			\
+ODIN_BUILD_SHARED_LIB_CMD := mkdir -p bin/shared/$(CARGO_PROFILE)/ && \
+odin build													   		  \
+wgpu_native/												   		  \
+-no-entry-point												   		  \
+-build-mode=shared											   		  \
+-debug 														          \
+-target=$(TARGET_OS)_$(ODIN_TARGET_ARCH)  					          \
+-extra-linker-flags="$(ODIN_EXTRA_LINKER_FLAGS)" 			   		  \
 -out="bin/$(CARGO_PROFILE)/wgpu"
 
+build:
+	$(CARGO_BUILD_WGPU_NATIVE)
+	$(ODIN_BUILD_SHARED_LIB_CMD)
 
-all:
+run:
 	$(CARGO_BUILD_WGPU_NATIVE)
 	$(ODIN_RUN_EXAMPLE_CMD)
 	
-build:
-	$(CARGO_BUILD_WGPU_NATIVE)
-	$(ODIN_BUILD_EXAMPLE_CMD)
-
 clean:
 	$(CARGO_CLEAN_WGPU_NATIVE)
+	rm -rf bin/*
+	
+.PHONY: build run clean

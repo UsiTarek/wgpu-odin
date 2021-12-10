@@ -34,13 +34,6 @@ SwapChain :: Handle
 Texture :: Handle
 TextureView :: Handle
 
-Flags :: u32
-BufferUsageFlags :: Flags
-ColorWriteMaskFlags :: Flags
-MapModeFlags :: Flags
-ShaderStageFlags :: Flags
-TextureUsageFlags :: Flags
-
 BufferMapCallback :: #type proc(
     status : BufferMapAsyncStatus,
     userdata : rawptr,
@@ -468,49 +461,54 @@ VertexStepMode :: enum i32 {
 }
 
 BufferUsage :: enum i32 {
-    None = 0,
-    MapRead = 1,
-    MapWrite = 2,
-    CopySrc = 4,
-    CopyDst = 8,
-    Index = 16,
-    Vertex = 32,
-    Uniform = 64,
-    Storage = 128,
-    Indirect = 256,
-    QueryResolve = 512,
+    MapRead = 0,
+    MapWrite = 1,
+    CopySrc = 2,
+    CopyDst = 3,
+    Index = 4,
+    Vertex = 5,
+    Uniform = 6,
+    Storage = 7,
+    Indirect = 8,
+    QueryResolve = 9,
 }
+BufferUsageFlags :: bit_set[BufferUsage; u32]
+BufferUsageFlagsNone :: BufferUsageFlags{}
 
-ColorWriteMask :: enum i32 {
-    None = 0,
-    Red = 1,
-    Green = 2,
-    Blue = 4,
-    Alpha = 8,
-    All = 15,
+ColorWriteMask :: enum u32 {
+    Red = 0,
+    Green = 1,
+    Blue = 2,
+    Alpha = 3,
 }
+ColorWriteMaskFlags :: bit_set[ColorWriteMask; u32]
+ColorWriteMaskFlagsAll :: ColorWriteMaskFlags{ .Red, .Green, .Blue, .Alpha }
+ColorWriteMaskFlagsNone :: ColorWriteMaskFlags{ }
 
 MapMode :: enum i32 {
-    None = 0,
-    Read = 1,
-    Write = 2,
+    Read = 0,
+    Write = 1,
 }
+MapModeFlags :: distinct bit_set[MapMode; u32]
+MapModeFlagsNone :: MapModeFlags{}
 
 ShaderStage :: enum i32 {
-    None = 0,
-    Vertex = 1,
-    Fragment = 2,
-    Compute = 4,
+    Vertex = 0,
+    Fragment = 1,
+    Compute = 2,
 }
+ShaderStageFlags :: distinct bit_set[ShaderStage; u32]
+ShaderStageFlagsNone :: ShaderStageFlags{}
 
 TextureUsage :: enum i32 {
-    None = 0,
-    CopySrc = 1,
-    CopyDst = 2,
-    TextureBinding = 4,
-    StorageBinding = 8,
-    RenderAttachment = 16,
+    CopySrc = 0,
+    CopyDst = 1,
+    TextureBinding = 2,
+    StorageBinding = 3,
+    RenderAttachment = 4,
 }
+TextureUsageFlags :: distinct bit_set[TextureUsage; u32]
+TextureUsageFlagsNone :: TextureUsageFlags{}
 
 ChainedStruct :: struct {
     next : ^ChainedStruct,
@@ -935,7 +933,7 @@ VertexBufferLayoutC :: struct {
     attributes : [^]VertexAttribute,
 }
 
-BindGroupLayoutDescriptor :: struct {
+BindGroupLayoutDescriptorC :: struct {
     nextInChain : ^ChainedStruct,
     label : cstring,
     entryCount : u32,
@@ -1175,11 +1173,6 @@ foreign lib {
         computePipeline : ComputePipeline,
         label : cstring,
     ) ---
-
-    DeviceCreateBindGroupLayout :: proc(
-        device : Device,
-        descriptor : ^BindGroupLayoutDescriptor,
-    ) -> BindGroupLayout ---
 
     DeviceCreateBuffer :: proc(
         device : Device,
@@ -1575,6 +1568,12 @@ foreign lib {
         device : Device,
         descriptor : ^BindGroupDescriptorC,
     ) -> BindGroup ---
+    
+    @(link_name="wgpuDeviceCreateBindGroupLayout")
+    DeviceCreateBindGroupLayoutC :: proc(
+        device : Device,
+        descriptor : ^BindGroupLayoutDescriptorC,
+    ) -> BindGroupLayout ---
     
     @(link_name="wgpuDeviceCreateRenderPipeline")
     DeviceCreateRenderPipelineC :: proc(
