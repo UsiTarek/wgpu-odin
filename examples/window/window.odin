@@ -2,7 +2,7 @@ package examples
 
 import "core:fmt"
 import SDL "vendor:sdl2"
-import WGPU "../../wgpu_native"
+import WGPU "../../wgpu"
 
 when ODIN_OS == "windows" {
     import "core:sys/win32"

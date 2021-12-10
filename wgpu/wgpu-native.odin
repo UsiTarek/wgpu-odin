@@ -1,4 +1,4 @@
-package wgpu_native
+package wgpu
 
  // -lwgpu_native
 when ODIN_OS == "windows" {

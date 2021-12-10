@@ -1,4 +1,4 @@
-package wgpu_native
+package wgpu
 
 import "core:mem"
 

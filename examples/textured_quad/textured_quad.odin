@@ -1,11 +1,12 @@
 package examples
 
-import stbi "vendor:stb/image"
 import "core:fmt"
 import "core:os"
 import "core:c"
-import SDL "vendor:sdl2"
-import WGPU "../../wgpu_native"
+
+import sdl "vendor:sdl2"
+import stbi "vendor:stb/image"
+import wgpu "../../wgpu"
 
 when ODIN_OS == "windows" {
     import "core:sys/win32"
@@ -16,97 +17,60 @@ Vertex :: struct {
     uv: [2]f32,
 }
 
-VERTICES :: [6]Vertex {
-    { pos = {-1.0, -1.0}, uv = { 0.0, 0.0 } },
-    { pos = {-1.0,  1.0}, uv = { 0.0, 1.0 } },
-    { pos = { 1.0,  1.0}, uv = { 1.0, 1.0 } },
-
-    { pos = {-1.0, -1.0}, uv = { 0.0, 0.0 } },
-    { pos = { 1.0, -1.0}, uv = { 1.0, 0.0 } },
-    { pos = { 1.0,  1.0}, uv = { 1.0, 1.0 } },
-}
-
-request_adapter_callback :: proc (
-    status: WGPU.RequestAdapterStatus,
-    adapter: WGPU.Adapter,
-    message: cstring,
-    userdata: rawptr,
-) {
-    adapter_props : WGPU.AdapterProperties
-    WGPU.AdapterGetProperties(adapter, &adapter_props)
-
-    if status == WGPU.RequestAdapterStatus.Success {
-        user_adapter := cast(^WGPU.Adapter)userdata
-        user_adapter^ = adapter
-   } 
-}
-
-request_device_callback :: proc (
-    status: WGPU.RequestDeviceStatus,
-    device : WGPU.Device,
-    message : cstring,
-    userdata : rawptr,
-) {
-    if status == WGPU.RequestDeviceStatus.Success {
-        user_device := cast(^WGPU.Device)userdata
-        user_device^ = device
-    }
-}
-
-error_callback :: proc(
-    level : WGPU.LogLevel,
-    msg : cstring,
-) {
-    fmt.println(msg)
-}
-
 main :: proc () {
-    err := SDL.Init({.VIDEO})
+    err := sdl.Init({.VIDEO})
     assert(err == 0)
     
-    window_flags : SDL.WindowFlags
+    window_flags : sdl.WindowFlags
     when ODIN_OS == "darwin" {
-        window_flags = SDL.WindowFlags{.METAL}
+        window_flags = sdl.WindowFlags{.METAL}
     }
     
-    window := SDL.CreateWindow(
+    window := sdl.CreateWindow(
         "WebGPU Example Quad",
-        SDL.WINDOWPOS_CENTERED,
-        SDL.WINDOWPOS_CENTERED,
+        sdl.WINDOWPOS_CENTERED,
+        sdl.WINDOWPOS_CENTERED,
         800,
         600,
         window_flags,
     )
-    defer SDL.DestroyWindow(window)
+    defer sdl.DestroyWindow(window)
     
-    WGPU.SetLogCallback(error_callback)
-    WGPU.SetLogLevel(WGPU.LogLevel.Warn)
+    wgpu.SetLogCallback(
+        proc(
+            level : wgpu.LogLevel,
+            msg : cstring,
+        ) {
+            fmt.println(msg)
+        },
+    )
+    wgpu.SetLogLevel(wgpu.LogLevel.Warn)
 
     when ODIN_OS == "darwin" {
-        metalView := SDL.Metal_CreateView(window)
-        defer SDL.Metal_DestroyView(metalView)
+        metalView := sdl.Metal_CreateView(window)
+        defer sdl.Metal_DestroyView(metalView)
         
-        surface := WGPU.InstanceCreateSurface(nil, &WGPU.SurfaceDescriptor{
+        surface := wgpu.InstanceCreateSurface(nil, &wgpu.SurfaceDescriptor{
             label = "Metal Surface",
-            nextInChain = auto_cast &WGPU.SurfaceDescriptorFromMetalLayer{
-                layer = SDL.Metal_GetLayer(metalView),
+            nextInChain = auto_cast &wgpu.SurfaceDescriptorFromMetalLayer{
+                layer = sdl.Metal_GetLayer(metalView),
                 chain = {
-                    sType = WGPU.SType.SurfaceDescriptorFromMetalLayer,
+                    sType = wgpu.SType.SurfaceDescriptorFromMetalLayer,
                 },
             },
         })
     }
     when ODIN_OS == "windows" {
-        wmInfo: SDL.SysWMinfo = ---
-        SDL.GetWindowWMInfo(window, &wmInfo);
+        wmInfo: sdl.SysWMinfo = ---
+        sdl.GetWindowWMInfo(window, &wmInfo);
         hwnd := wmInfo.info.win.window;
         hinstance := win32.get_module_handle_a(nil)
 
-        surface := WGPU.InstanceCreateSurface(nil, &(WGPU.SurfaceDescriptor) {
+        surface := wgpu.InstanceCreateSurface(nil, &(wgpu.SurfaceDescriptor) {
             label = "Windows Surface",
-            nextInChain = auto_cast &WGPU.SurfaceDescriptorFromWindowsHWND{
-                chain = (WGPU.ChainedStruct) {
-                    sType = WGPU.SType.SurfaceDescriptorFromWindowsHWND,
+            nextInChain = auto_cast &wgpu.SurfaceDescriptorFromWindowsHWND{
+                chain = (wgpu.ChainedStruct) {
+                    sType = wgpu.SType.SurfaceDescriptorFromWindowsHWND,
                 },
                 hinstance = hinstance,
                 hwnd = hwnd,
@@ -116,66 +80,89 @@ main :: proc () {
 
     assert(surface != nil)
     
-    adapter : WGPU.Adapter = nil
-    WGPU.InstanceRequestAdapter(nil,
-                            &(WGPU.RequestAdapterOptions{
+    adapter : wgpu.Adapter = nil
+    wgpu.InstanceRequestAdapter(nil,
+                            &(wgpu.RequestAdapterOptions{
                                 compatibleSurface = surface,
-                                powerPreference = WGPU.PowerPreference.LowPower,
+                                powerPreference = wgpu.PowerPreference.LowPower,
                                 forceFallbackAdapter = false,
                             }),
-                            request_adapter_callback,
+                            proc (
+                                status: wgpu.RequestAdapterStatus,
+                                adapter: wgpu.Adapter,
+                                message: cstring,
+                                userdata: rawptr,
+                            ) {
+                                adapter_props : wgpu.AdapterProperties
+                                wgpu.AdapterGetProperties(adapter, &adapter_props)
+
+                                if status == wgpu.RequestAdapterStatus.Success {
+                                    user_adapter := cast(^wgpu.Adapter)userdata
+                                    user_adapter^ = adapter
+                               } 
+                            },
                             &adapter)
     assert(adapter != nil)
     
-    device : WGPU.Device = nil
-    WGPU.AdapterRequestDevice(adapter,
-                            &WGPU.DeviceDescriptor {
-                                nextInChain = auto_cast &WGPU.DeviceExtras{
-                                    chain = WGPU.ChainedStruct{
-                                        sType = auto_cast WGPU.NativeSType.DeviceExtras,
+    device : wgpu.Device = nil
+    wgpu.AdapterRequestDevice(adapter,
+                            &wgpu.DeviceDescriptor {
+                                nextInChain = auto_cast &wgpu.DeviceExtras{
+                                    chain = wgpu.ChainedStruct{
+                                        sType = auto_cast wgpu.NativeSType.DeviceExtras,
                                     },    
                                     label = "Device",
                                 },
-                                requiredLimits = &WGPU.RequiredLimits{
-                                    limits = (WGPU.Limits) {
+                                requiredLimits = &wgpu.RequiredLimits{
+                                    limits = (wgpu.Limits) {
                                         maxBindGroups = 1,
                                     },
                                 },
                             },
-                            request_device_callback,
+                            proc (
+                                status: wgpu.RequestDeviceStatus,
+                                device : wgpu.Device,
+                                message : cstring,
+                                userdata : rawptr,
+                            ) {
+                                if status == wgpu.RequestDeviceStatus.Success {
+                                    user_device := cast(^wgpu.Device)userdata
+                                    user_device^ = device
+                                }
+                            },
                             &device)
     assert(device != nil)
 
-    queue := WGPU.DeviceGetQueue(device)
+    queue := wgpu.DeviceGetQueue(device)
     
-    bind_group_layout_0 := WGPU.DeviceCreateBindGroupLayout(
+    bind_group_layout_0 := wgpu.DeviceCreateBindGroupLayout(
         device,
-        &WGPU.BindGroupLayoutDescriptor {
+        &wgpu.BindGroupLayoutDescriptor {
             label = "Texture Bind Group Layout",
             entries = {
                 {
                     binding = 0,
-                    visibility = WGPU.ShaderStageFlags{ .Fragment },
+                    visibility = wgpu.ShaderStageFlags{ .Fragment },
                     texture = {
-                        sampleType = WGPU.TextureSampleType.Float,
-                        viewDimension = WGPU.TextureViewDimension.TwoDimensional,
+                        sampleType = wgpu.TextureSampleType.Float,
+                        viewDimension = wgpu.TextureViewDimension.TwoDimensional,
                     },
                 },
                 {
                     binding = 1,
-                    visibility = WGPU.ShaderStageFlags{ .Fragment },
+                    visibility = wgpu.ShaderStageFlags{ .Fragment },
                     sampler = {
-                        type = WGPU.SamplerBindingType.Filtering,
+                        type = wgpu.SamplerBindingType.Filtering,
                     },
                 },
             },
         },
     )
-    defer WGPU.BindGroupLayoutDrop(bind_group_layout_0)
+    defer wgpu.BindGroupLayoutDrop(bind_group_layout_0)
    
-    pipeline_layout := WGPU.DeviceCreatePipelineLayout(
+    pipeline_layout := wgpu.DeviceCreatePipelineLayout(
         device, 
-        &WGPU.PipelineLayoutDescriptor{
+        &wgpu.PipelineLayoutDescriptor{
             label = "Empty Pipeline Layout",
             bindGroupLayouts = {
                 bind_group_layout_0,
@@ -189,37 +176,37 @@ main :: proc () {
     }
     defer delete(read_content)
     
-    shader_module :=  WGPU.DeviceCreateShaderModule(device, &WGPU.ShaderModuleDescriptor{
-        nextInChain = auto_cast &WGPU.ShaderModuleWGSLDescriptor{
-            chain = WGPU.ChainedStruct {
-                sType = WGPU.SType.ShaderModuleWGSLDescriptor,
+    shader_module :=  wgpu.DeviceCreateShaderModule(device, &wgpu.ShaderModuleDescriptor{
+        nextInChain = auto_cast &wgpu.ShaderModuleWGSLDescriptor{
+            chain = wgpu.ChainedStruct {
+                sType = wgpu.SType.ShaderModuleWGSLDescriptor,
             },
             source = cstring(&read_content[0]),
         },
         label = "Quad Shader Module",
     })
-    defer WGPU.ShaderModuleDrop(shader_module)
+    defer wgpu.ShaderModuleDrop(shader_module)
 
-    render_pipeline := WGPU.DeviceCreateRenderPipeline(
+    render_pipeline := wgpu.DeviceCreateRenderPipeline(
         device,
-        &WGPU.RenderPipelineDescriptor{
+        &wgpu.RenderPipelineDescriptor{
         label = "Quad Render Pipeline",
         layout = pipeline_layout,
-        vertex = WGPU.VertexState{
+        vertex = wgpu.VertexState{
             module = shader_module,
             entryPoint = "vs_main",
             buffers = {
                 {
                     arrayStride = size_of(Vertex),
-                    stepMode = WGPU.VertexStepMode.Vertex,
+                    stepMode = wgpu.VertexStepMode.Vertex,
                     attributes = {
                         {
-                            format = WGPU.VertexFormat.Float32x2,
+                            format = wgpu.VertexFormat.Float32x2,
                             offset = auto_cast offset_of(Vertex, pos),
                             shaderLocation = 0,
                         },
                         {
-                            format = WGPU.VertexFormat.Float32x2,
+                            format = wgpu.VertexFormat.Float32x2,
                             offset = auto_cast offset_of(Vertex, uv),
                             shaderLocation = 1,
                         },
@@ -232,14 +219,14 @@ main :: proc () {
             entryPoint = "fs_main",
             targets = {
                 {
-                    format = WGPU.TextureFormat.BGRA8UnormSrgb,
-                    writeMask = WGPU.ColorWriteMaskFlagsAll,
+                    format = wgpu.TextureFormat.BGRA8UnormSrgb,
+                    writeMask = wgpu.ColorWriteMaskFlagsAll,
                 },
             },
         },
         primitive = {
-            topology = WGPU.PrimitiveTopology.TriangleList,
-            cullMode = WGPU.CullMode.None,
+            topology = wgpu.PrimitiveTopology.TriangleList,
+            cullMode = wgpu.CullMode.None,
         },
         multisample =  {
             count = 1,
@@ -247,36 +234,45 @@ main :: proc () {
             alphaToCoverageEnabled = false,
         },
     })
-    defer WGPU.RenderPipelineDrop(render_pipeline)
+    defer wgpu.RenderPipelineDrop(render_pipeline)
     
     w, h : i32 = 0, 0
-    SDL.GetWindowSize(window, &w, &h)
-    swapchain := WGPU.DeviceCreateSwapChain(
+    sdl.GetWindowSize(window, &w, &h)
+    swapchain := wgpu.DeviceCreateSwapChain(
         device,
         surface,
-        &(WGPU.SwapChainDescriptor){
+        &(wgpu.SwapChainDescriptor){
             label = "Swapchain",
-            usage = WGPU.TextureUsageFlags{.RenderAttachment},
-            format = WGPU.TextureFormat.BGRA8UnormSrgb,
+            usage = wgpu.TextureUsageFlags{.RenderAttachment},
+            format = wgpu.TextureFormat.BGRA8UnormSrgb,
             width = auto_cast w,
             height = auto_cast h,
-            presentMode = WGPU.PresentMode.Fifo,
+            presentMode = wgpu.PresentMode.Fifo,
         },
     )
-    
-    vert_buffer := WGPU.DeviceCreateBuffer(
+   
+    vertices := [6]Vertex {
+        { pos = {-1.0, -1.0}, uv = { 0.0, 0.0 } },
+        { pos = {-1.0,  1.0}, uv = { 0.0, 1.0 } },
+        { pos = { 1.0,  1.0}, uv = { 1.0, 1.0 } },
+
+        { pos = {-1.0, -1.0}, uv = { 0.0, 0.0 } },
+        { pos = { 1.0, -1.0}, uv = { 1.0, 0.0 } },
+        { pos = { 1.0,  1.0}, uv = { 1.0, 1.0 } },
+    }
+
+    vert_buffer := wgpu.DeviceCreateBuffer(
         device, 
-        &WGPU.BufferDescriptor{
+        &wgpu.BufferDescriptor{
             label = "",
-            usage = WGPU.BufferUsageFlags{ .Vertex, .CopyDst },
+            usage = wgpu.BufferUsageFlags{ .Vertex, .CopyDst },
             size = size_of(Vertex) * 6, 
         },
     )
-    defer WGPU.BufferDrop(vert_buffer)
+    defer wgpu.BufferDrop(vert_buffer)
     
-    vertices := VERTICES
-    WGPU.QueueWriteBuffer(queue, vert_buffer, 0, &vertices, size_of(vertices))
-    WGPU.QueueSubmit(queue, []WGPU.CommandBuffer{})
+    wgpu.QueueWriteBuffer(queue, vert_buffer, 0, &vertices, size_of(vertices))
+    wgpu.QueueSubmit(queue, []wgpu.CommandBuffer{})
     
     texture_width, texture_height, texture_channels_count : i32
     texture_filename : cstring = "examples/textured_quad/textured_quad.png"
@@ -284,30 +280,30 @@ main :: proc () {
 	stbi.set_flip_vertically_on_load(1)
     texture_data := stbi.load(texture_filename, &texture_width, &texture_height, &texture_channels_count, 4)
     
-    texture := WGPU.DeviceCreateTexture(
+    texture := wgpu.DeviceCreateTexture(
         device, 
-        &WGPU.TextureDescriptor{
+        &wgpu.TextureDescriptor{
             label = "Example Texture",
-            usage = WGPU.TextureUsageFlags{ .CopyDst, .TextureBinding },
-            dimension = WGPU.TextureDimension.TwoDimensional,
-            size = WGPU.Extent3D{
+            usage = wgpu.TextureUsageFlags{ .CopyDst, .TextureBinding },
+            dimension = wgpu.TextureDimension.TwoDimensional,
+            size = wgpu.Extent3D{
                 width = auto_cast texture_width,
                 height = auto_cast texture_height,
                 depthOrArrayLayers = 1,
             },
-            format = WGPU.TextureFormat.RGBA8Unorm,
+            format = wgpu.TextureFormat.RGBA8Unorm,
             mipLevelCount = 1,
             sampleCount = 1,
         },
     )
-    defer WGPU.TextureDrop(texture)
+    defer wgpu.TextureDrop(texture)
     
-    WGPU.QueueWriteTexture(
+    wgpu.QueueWriteTexture(
         queue = queue,
         destination = &{
             texture = texture,
             mipLevel = 0,
-            aspect = WGPU.TextureAspect.All,
+            aspect = wgpu.TextureAspect.All,
         },
         data = auto_cast &texture_data[0],
         dataSize = auto_cast (texture_width * texture_height * texture_channels_count),
@@ -317,35 +313,37 @@ main :: proc () {
             rowsPerImage = auto_cast texture_height,
         },
         writeSize = &{
-                width = auto_cast texture_width,
-                height = auto_cast texture_height,
-                depthOrArrayLayers = 1,
-            },
+            width = auto_cast texture_width,
+            height = auto_cast texture_height,
+            depthOrArrayLayers = 1,
+        },
     )
-    WGPU.QueueSubmit(queue, []WGPU.CommandBuffer{})
+    wgpu.QueueSubmit(queue, []wgpu.CommandBuffer{})
     
-    texture_view := WGPU.TextureCreateView(
+    texture_view := wgpu.TextureCreateView(
         texture,
-        &WGPU.TextureViewDescriptor{
-            format = WGPU.TextureFormat.RGBA8Unorm,
-            dimension = WGPU.TextureViewDimension.TwoDimensional,
+        &wgpu.TextureViewDescriptor{
+            format = wgpu.TextureFormat.RGBA8Unorm,
+            dimension = wgpu.TextureViewDimension.TwoDimensional,
             mipLevelCount = 1,
             arrayLayerCount = 1,
-            aspect = WGPU.TextureAspect.All,
+            aspect = wgpu.TextureAspect.All,
         },
     )
+    defer wgpu.TextureViewDrop(texture_view)
     
-    sampler := WGPU.DeviceCreateSampler(
+    sampler := wgpu.DeviceCreateSampler(
         device,
-        &WGPU.SamplerDescriptor{
-            magFilter = WGPU.FilterMode.Linear,
-            minFilter = WGPU.FilterMode.Linear,
+        &wgpu.SamplerDescriptor{
+            magFilter = wgpu.FilterMode.Linear,
+            minFilter = wgpu.FilterMode.Linear,
         },
     )
+    defer wgpu.SamplerDrop(sampler)
     
-    texture_bind_group := WGPU.DeviceCreateBindGroup(
+    texture_bind_group := wgpu.DeviceCreateBindGroup(
         device,
-        &WGPU.BindGroupDescriptor{
+        &wgpu.BindGroupDescriptor{
             layout = bind_group_layout_0,
             entries = {
                 {
@@ -359,49 +357,50 @@ main :: proc () {
             },
         },
     )
+    defer wgpu.BindGroupDrop(texture_bind_group)
     
     main_loop: for {
-        for e: SDL.Event; SDL.PollEvent(&e) != 0; {
+        for e: sdl.Event; sdl.PollEvent(&e) != 0; {
             #partial switch(e.type) {
                 case .QUIT:
                     break main_loop;
             }
         }
         
-        current_view := WGPU.SwapChainGetCurrentTextureView(swapchain)
+        current_view := wgpu.SwapChainGetCurrentTextureView(swapchain)
         
-        cmd_encoder := WGPU.DeviceCreateCommandEncoder(
+        cmd_encoder := wgpu.DeviceCreateCommandEncoder(
             device, 
-            &WGPU.CommandEncoderDescriptor{
+            &wgpu.CommandEncoderDescriptor{
                 label = "Main Command Encoder",
             },
         )
 
-        render_pass := WGPU.CommandEncoderBeginRenderPass(
+        render_pass := wgpu.CommandEncoderBeginRenderPass(
             cmd_encoder, 
-            &WGPU.RenderPassDescriptor{
+            &wgpu.RenderPassDescriptor{
                 label = "Main Render Pass",
                 colorAttachments = {
                     {
                         view = current_view,
-                        loadOp = WGPU.LoadOp.Clear,
-                        storeOp = WGPU.StoreOp.Store,
-                        clearColor = WGPU.Color{ 0.1, 0.1, 0.25, 1.0 },
+                        loadOp = wgpu.LoadOp.Clear,
+                        storeOp = wgpu.StoreOp.Store,
+                        clearColor = wgpu.Color{ 0.1, 0.1, 0.25, 1.0 },
                     },
                 },
             },
         )
-        WGPU.RenderPassEncoderSetPipeline(render_pass, render_pipeline)
-        WGPU.RenderPassEncoderSetBindGroup(render_pass, 0, texture_bind_group, 0, nil)
-        WGPU.RenderPassEncoderSetVertexBuffer(render_pass, 0, vert_buffer, 0, 0)
-        WGPU.RenderPassEncoderDraw(render_pass, len(VERTICES), 1, 0, 0)
-        WGPU.RenderPassEncoderEndPass(render_pass)
+        wgpu.RenderPassEncoderSetPipeline(render_pass, render_pipeline)
+        wgpu.RenderPassEncoderSetBindGroup(render_pass, 0, texture_bind_group, 0, nil)
+        wgpu.RenderPassEncoderSetVertexBuffer(render_pass, 0, vert_buffer, 0, 0)
+        wgpu.RenderPassEncoderDraw(render_pass, len(vertices), 1, 0, 0)
+        wgpu.RenderPassEncoderEndPass(render_pass)
 
-        cmd_buffer := WGPU.CommandEncoderFinish(cmd_encoder, &WGPU.CommandBufferDescriptor{
+        cmd_buffer := wgpu.CommandEncoderFinish(cmd_encoder, &wgpu.CommandBufferDescriptor{
             label = "Main Command Buffer",
         })
-        WGPU.QueueSubmit(queue, []WGPU.CommandBuffer{cmd_buffer});
+        wgpu.QueueSubmit(queue, []wgpu.CommandBuffer{cmd_buffer});
 
-        WGPU.SwapChainPresent(swapchain)
+        wgpu.SwapChainPresent(swapchain)
     }
 }
