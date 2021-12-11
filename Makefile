@@ -99,6 +99,7 @@ wgpu_native/												   		  \
 setup:
 	git pull
 	git submodule update --init --recursive
+	$(CARGO_BUILD_WGPU_NATIVE)
 
 build:
 	$(CARGO_BUILD_WGPU_NATIVE)
