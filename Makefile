@@ -13,6 +13,12 @@ else
 $(error [ERROR][OS] Unsupported platform : '$(detected_OS)')
 endif
 
+ifeq ($(profile),)
+Profile := release
+else
+Profile := $(profile)
+endif
+
 ## -- Target Triple -- ##
 TARGET_ARCH:=x86_64
 ifeq ($(detected_OS),Windows)
@@ -31,8 +37,13 @@ CARGO_TARGET_OS := $(TARGET_OS)-msvc
 endif
 
 CARGO_TARGET := $(TARGET_ARCH)-$(TARGET_PLATFORM)-$(CARGO_TARGET_OS)
-CARGO_BUILD := cargo build --target=$(CARGO_TARGET)
-CARGO_PROFILE := debug
+ifeq ($(Profile),release)
+CARGO_PROFILE := release
+else
+CARGO_PROFILE :=
+endif
+
+CARGO_BUILD := cargo build --target=$(CARGO_TARGET) --$(CARGO_PROFILE)
 
 ## Rust -- WGPU-Native -- ##
 
@@ -76,32 +87,39 @@ else
 ODIN_EXAMPLE_BIN_NAME :=$(example_name)
 endif
 
+ifeq ($(Profile),release)
+ODIN_PROFILE := -o:speed
+else
+ODIN_PROFILE := -debug
+endif
+
 ODIN_EXAMPLE_BIN_PATH := bin/examples/$(CARGO_PROFILE)/$(ODIN_EXAMPLE_BIN_NAME)
 ODIN_RUN_EXAMPLE_CMD_PRE := mkdir -p $(ODIN_EXAMPLE_BIN_PATH)
 ODIN_RUN_EXAMPLE_CMD := $(ODIN_RUN_EXAMPLE_CMD_PRE) &&									\
 						odin run 														\
 						examples/$(ODIN_EXAMPLE_BIN_NAME)/$(ODIN_EXAMPLE_BIN_NAME).odin \
-						-debug 															\
+						$(ODIN_PROFILE)													\
 						-target=$(TARGET_OS)_$(ODIN_TARGET_ARCH)  						\
 						-extra-linker-flags="$(ODIN_EXTRA_LINKER_FLAGS)" 				\
 						-out="$(ODIN_EXAMPLE_BIN_PATH)/$(ODIN_EXAMPLE_BIN_NAME)"
 						
 ODIN_BUILD_SHARED_LIB_CMD := mkdir -p bin/shared/$(CARGO_PROFILE)/ && \
 odin build													   		  \
-wgpu_native/												   		  \
+wgpu/												   		  		  \
 -no-entry-point												   		  \
 -build-mode=shared											   		  \
--debug 														          \
+$(ODIN_PROFILE)														  \
 -target=$(TARGET_OS)_$(ODIN_TARGET_ARCH)  					          \
 -extra-linker-flags="$(ODIN_EXTRA_LINKER_FLAGS)" 			   		  \
--out="bin/$(CARGO_PROFILE)/wgpu"
+-out="bin/shared/$(CARGO_PROFILE)/wgpu"
 
 setup:
+	git config pull.rebase false
 	git pull
 	git submodule update --init --recursive
 	$(CARGO_BUILD_WGPU_NATIVE)
 
-build:
+shared:
 	$(CARGO_BUILD_WGPU_NATIVE)
 	$(ODIN_BUILD_SHARED_LIB_CMD)
 
