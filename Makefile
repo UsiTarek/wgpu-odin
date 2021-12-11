@@ -96,6 +96,10 @@ wgpu_native/												   		  \
 -extra-linker-flags="$(ODIN_EXTRA_LINKER_FLAGS)" 			   		  \
 -out="bin/$(CARGO_PROFILE)/wgpu"
 
+setup:
+	git pull
+	git submodule update --init --recursive
+
 build:
 	$(CARGO_BUILD_WGPU_NATIVE)
 	$(ODIN_BUILD_SHARED_LIB_CMD)

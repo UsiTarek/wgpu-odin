@@ -276,8 +276,8 @@ main :: proc () {
     
     texture_width, texture_height, texture_channels_count : i32
     texture_filename : cstring = "examples/textured_quad/textured_quad.png"
-    assert(stbi.is_16_bit(texture_filename) == false)
 	stbi.set_flip_vertically_on_load(1)
+    assert(stbi.is_16_bit(texture_filename) == false)
     texture_data := stbi.load(texture_filename, &texture_width, &texture_height, &texture_channels_count, 4)
     
     texture := wgpu.DeviceCreateTexture(
