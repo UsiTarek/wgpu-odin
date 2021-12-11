@@ -15,7 +15,7 @@
  #### 1 - Building wgpu_native :
  Clone this repository : 
  ```
- git clone https://github.com/UsiTarek/
+ git clone https://github.com/UsiTarek/wgpu-odin
  ```
  Run 'make' or 'make setup' :
  ```
