@@ -114,17 +114,17 @@ $(ODIN_PROFILE)														  \
 -out="bin/shared/$(CARGO_PROFILE)/wgpu"
 
 setup:
-	git config pull.rebase false
+	git config --global pull.rebase true
+	git config --global fetch.prune true
+	git config --global diff.colorMoved zebra
 	git pull
 	git submodule update --init --recursive
 	$(CARGO_BUILD_WGPU_NATIVE)
 
-shared:
-	$(CARGO_BUILD_WGPU_NATIVE)
+shared: setup
 	$(ODIN_BUILD_SHARED_LIB_CMD)
 
-run:
-	$(CARGO_BUILD_WGPU_NATIVE)
+run: setup
 	$(ODIN_RUN_EXAMPLE_CMD)
 	
 clean:
