@@ -1,6 +1,10 @@
-package wgpu_native
+package wgpu
 
-foreign import wgpu "system:wgpu_native"
+when ODIN_OS == "windows" {
+    foreign import lib "wgpu_native.lib"
+}else {
+    foreign import lib "system:wgpu_native"
+}
 
 import _c "core:c"
 
@@ -14,7 +18,6 @@ LogCallback :: #type proc(
 NativeSType :: enum i32 {
     DeviceExtras = 1610612737,
     AdapterExtras = 1610612738,
-    Force32 = 2147483647,
 }
 
 NativeFeature :: enum i32 {
@@ -28,7 +31,6 @@ LogLevel :: enum i32 {
     Info = 3,
     Debug = 4,
     Trace = 5,
-    Force32 = 2147483647,
 }
 
 AdapterExtras :: struct {
@@ -43,25 +45,20 @@ DeviceExtras :: struct {
     tracePath : cstring,
 }
 
-@(default_calling_convention="c")
-foreign wgpu {
+@(default_calling_convention="c", link_prefix="wgpu")
+foreign lib {
 
-    @(link_name="wgpuDevicePoll")
     DevicePoll :: proc(
         device : Device,
         force_wait : bool,
     ) ---
 
-    @(link_name="wgpuSetLogCallback")
     SetLogCallback :: proc(callback : LogCallback) ---
 
-    @(link_name="wgpuSetLogLevel")
     SetLogLevel :: proc(level : LogLevel) ---
 
-    @(link_name="wgpuGetVersion")
     GetVersion :: proc() -> u32 ---
 
-    @(link_name="wgpuRenderPassEncoderSetPushConstants")
     RenderPassEncoderSetPushConstants :: proc(
         encoder : RenderPassEncoder,
         stages : ShaderStage,
@@ -70,49 +67,33 @@ foreign wgpu {
         data : rawptr,
     ) ---
 
-    @(link_name="wgpuBufferDrop")
     BufferDrop :: proc(buffer : Buffer) ---
 
-    @(link_name="wgpuCommandEncoderDrop")
     CommandEncoderDrop :: proc(commandEncoder : CommandEncoder) ---
 
-    @(link_name="wgpuDeviceDrop")
     DeviceDrop :: proc(device : Device) ---
 
-    @(link_name="wgpuQuerySetDrop")
     QuerySetDrop :: proc(querySet : QuerySet) ---
 
-    @(link_name="wgpuRenderPipelineDrop")
     RenderPipelineDrop :: proc(renderPipeline : RenderPipeline) ---
 
-    @(link_name="wgpuTextureDrop")
     TextureDrop :: proc(texture : Texture) ---
 
-    @(link_name="wgpuTextureViewDrop")
     TextureViewDrop :: proc(textureView : TextureView) ---
 
-    @(link_name="wgpuSamplerDrop")
     SamplerDrop :: proc(sampler : Sampler) ---
 
-    @(link_name="wgpuBindGroupLayoutDrop")
     BindGroupLayoutDrop :: proc(bindGroupLayout : BindGroupLayout) ---
 
-    @(link_name="wgpuPipelineLayoutDrop")
     PipelineLayoutDrop :: proc(pipelineLayout : PipelineLayout) ---
 
-    @(link_name="wgpuBindGroupDrop")
     BindGroupDrop :: proc(bindGroup : BindGroup) ---
 
-    @(link_name="wgpuShaderModuleDrop")
     ShaderModuleDrop :: proc(shaderModule : ShaderModule) ---
 
-    @(link_name="wgpuCommandBufferDrop")
     CommandBufferDrop :: proc(commandBuffer : CommandBuffer) ---
 
-    @(link_name="wgpuRenderBundleDrop")
     RenderBundleDrop :: proc(renderBundle : RenderBundle) ---
 
-    @(link_name="wgpuComputePipelineDrop")
     ComputePipelineDrop :: proc(computePipeline : ComputePipeline) ---
-
 }

@@ -1,5 +1,4 @@
 bin/
-thirdparty/
 vsession
 ols.json
 ***/*.o
