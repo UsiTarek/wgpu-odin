@@ -48,11 +48,6 @@ DeviceExtras :: struct {
 @(default_calling_convention="c", link_prefix="wgpu")
 foreign lib {
 
-    DevicePoll :: proc(
-        device : Device,
-        force_wait : bool,
-    ) ---
-
     SetLogCallback :: proc(callback : LogCallback) ---
 
     SetLogLevel :: proc(level : LogLevel) ---
@@ -96,4 +91,15 @@ foreign lib {
     RenderBundleDrop :: proc(renderBundle : RenderBundle) ---
 
     ComputePipelineDrop :: proc(computePipeline : ComputePipeline) ---
+}
+
+@(default_calling_convention="c")
+foreign lib {
+
+    @(link_name="wgpuDevicePoll")
+    DevicePollC :: proc(
+        device : Device,
+        force_wait : bool,
+    ) ---
+
 }

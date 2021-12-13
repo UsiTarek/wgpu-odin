@@ -2,6 +2,7 @@ package wgpu
 
 import "core:mem"
 
+@(private="file")
 slice_to_ptr :: proc (
     slice: []$T,
 ) -> (^T, uint) {
@@ -108,6 +109,7 @@ RenderPipelineDescriptor :: struct {
     fragment : ^FragmentState,
 }
 
+@(private)
 DeviceCreateRenderPipelineSlice :: proc(
         device : Device,
         descriptor : ^RenderPipelineDescriptor,
@@ -118,7 +120,7 @@ DeviceCreateRenderPipelineSlice :: proc(
         constants, constantCount := slice_to_ptr(descriptor.fragment.constants)
         targets, targetCount := slice_to_ptr(descriptor.fragment.targets)
         
-        fragment = &FragmentStateC {
+        fragment = &FragmentStateC{
             nextInChain = fragmentSlice.nextInChain,
             module = fragmentSlice.module,
             entryPoint = fragmentSlice.entryPoint,
@@ -134,8 +136,8 @@ DeviceCreateRenderPipelineSlice :: proc(
     {
         constants, constantCount := slice_to_ptr(descriptor.vertex.constants)
         
-        bufferCount := cast(u32)len(descriptor.vertex.buffers)
-        buffersSlice := make([]VertexBufferLayoutC, bufferCount)
+        bufferCount := len(descriptor.vertex.buffers)
+        buffersSlice := make([]VertexBufferLayoutC, auto_cast bufferCount, context.temp_allocator)
         if bufferCount != 0 {
             for bufferLayout, i in descriptor.vertex.buffers {
             attributes, attributeCount := slice_to_ptr(descriptor.vertex.buffers[i].attributes)
@@ -155,7 +157,7 @@ DeviceCreateRenderPipelineSlice :: proc(
             entryPoint = descriptor.vertex.entryPoint,
             constantCount = auto_cast constantCount,
             constants = constants,
-            bufferCount = bufferCount, 
+            bufferCount = auto_cast bufferCount, 
             buffers = buffers,
         }
     }
@@ -175,6 +177,7 @@ DeviceCreateRenderPipelineSlice :: proc(
     )
 }
 
+@(private)
 DeviceCreateRenderPipelineAsyncSlice :: proc(
     device : Device,
     descriptor : ^RenderPipelineDescriptor,
@@ -203,12 +206,12 @@ DeviceCreateRenderPipelineAsyncSlice :: proc(
     {
         constants, constantCount := slice_to_ptr(descriptor.vertex.constants)
         
-        bufferCount := cast(u32)len(descriptor.vertex.buffers)
-        buffersSlice := make([]VertexBufferLayoutC, bufferCount)
+        bufferCount := len(descriptor.vertex.buffers)
+        buffersSlice := make([]VertexBufferLayoutC, auto_cast bufferCount, context.temp_allocator)
         if bufferCount != 0 {
             for bufferLayout, i in descriptor.vertex.buffers {
             attributes, attributeCount := slice_to_ptr(descriptor.vertex.buffers[i].attributes)
-                buffersSlice [i] = VertexBufferLayoutC{
+                buffersSlice[i] = VertexBufferLayoutC{
                     arrayStride = descriptor.vertex.buffers[i].arrayStride,
                     stepMode = descriptor.vertex.buffers[i].stepMode,
                     attributeCount = auto_cast attributeCount,
@@ -224,7 +227,7 @@ DeviceCreateRenderPipelineAsyncSlice :: proc(
             entryPoint = descriptor.vertex.entryPoint,
             constantCount = auto_cast constantCount,
             constants = constants,
-            bufferCount = bufferCount, 
+            bufferCount = auto_cast bufferCount, 
             buffers = buffers,
         }
     }
@@ -246,6 +249,7 @@ DeviceCreateRenderPipelineAsyncSlice :: proc(
     )
 }
 
+@(private)
 DeviceCreateBindGroupSlice :: proc(
     device : Device,
     descriptor : ^BindGroupDescriptor,
@@ -264,6 +268,7 @@ DeviceCreateBindGroupSlice :: proc(
     )
 }
 
+@(private)
 DeviceCreateRenderBundleEncoderSlice :: proc(
         device : Device,
         descriptor : ^RenderBundleEncoderDescriptor,
@@ -284,6 +289,7 @@ DeviceCreateRenderBundleEncoderSlice :: proc(
 
 }
 
+@(private)
 DeviceCreateQuerySetSlice :: proc(
         device : Device,
         descriptor : ^QuerySetDescriptor,
@@ -303,12 +309,14 @@ DeviceCreateQuerySetSlice :: proc(
     )
 }
 
+@(private)
 QueueSubmitSlice :: proc(
         queue : Queue,
         commands : []CommandBuffer,
 ) {
     cmds, cmdCount := slice_to_ptr(commands)
    
+    free_all(context.temp_allocator)
     QueueSubmit(
         queue,
         auto_cast cmdCount,
@@ -316,6 +324,7 @@ QueueSubmitSlice :: proc(
     )
 }
 
+@(private)
 ComputePassEncoderSetBindGroupSlice :: proc(
     computePassEncoder : ComputePassEncoder,
     groupIndex : u32,
@@ -333,6 +342,7 @@ ComputePassEncoderSetBindGroupSlice :: proc(
     )
 }
 
+@(private)
 DeviceCreatePipelineLayoutSlice :: proc(
         device : Device,
         descriptor : ^PipelineLayoutDescriptor,
@@ -351,6 +361,7 @@ DeviceCreatePipelineLayoutSlice :: proc(
     )
 }
 
+@(private)
 DeviceCreateBindGroupLayoutSlice :: proc(
     device : Device,
     descriptor : ^BindGroupLayoutDescriptor,
@@ -368,7 +379,7 @@ DeviceCreateBindGroupLayoutSlice :: proc(
     )
 }
 
-
+@(private)
 DeviceCreateComputePipelineSlice :: proc(
         device : Device,
         descriptor : ^ComputePipelineDescriptor,
@@ -392,6 +403,7 @@ DeviceCreateComputePipelineSlice :: proc(
     )
 }
 
+@(private)
 DeviceCreateComputePipelineAsyncSlice :: proc(
     device : Device,
     descriptor : ^ComputePipelineDescriptor,
@@ -419,6 +431,7 @@ DeviceCreateComputePipelineAsyncSlice :: proc(
    )
 }
 
+@(private)
 AdapterRequestDeviceSlice :: proc(
         adapter : Adapter,
         descriptor : ^DeviceDescriptor,
@@ -440,7 +453,7 @@ AdapterRequestDeviceSlice :: proc(
     )
 }
 
-
+@(private)
 CommandEncoderBeginRenderPassSlice :: proc(
     commandEncoder : CommandEncoder,
     descriptor : ^RenderPassDescriptor,
@@ -459,7 +472,6 @@ CommandEncoderBeginRenderPassSlice :: proc(
         },
     )
 }
-
 
 AdapterRequestDevice :: proc {
     AdapterRequestDeviceSlice,
@@ -526,4 +538,7 @@ DeviceCreateComputePipelineAsync :: proc {
     DeviceCreateComputePipelineAsyncC,
 }
 
-//DeviceDescriptorSlice :: struct {}
+SwapChainPresent :: proc(swapChain : SwapChain) {
+    SwapChainPresentC(swapChain)
+    free_all(context.temp_allocator)
+}

@@ -279,6 +279,7 @@ main :: proc () {
 	stbi.set_flip_vertically_on_load(1)
     assert(stbi.is_16_bit(texture_filename) == false)
     texture_data := stbi.load(texture_filename, &texture_width, &texture_height, &texture_channels_count, 4)
+    defer stbi.image_free(texture_data)
     
     texture := wgpu.DeviceCreateTexture(
         device, 
@@ -359,6 +360,7 @@ main :: proc () {
     )
     defer wgpu.BindGroupDrop(texture_bind_group)
     
+    wgpu.DevicePoll(device, true)
     main_loop: for {
         for e: sdl.Event; sdl.PollEvent(&e) != 0; {
             #partial switch(e.type) {

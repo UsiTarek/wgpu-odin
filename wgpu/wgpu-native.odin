@@ -1501,8 +1501,6 @@ foreign lib {
 
     SwapChainGetCurrentTextureView :: proc(swapChain : SwapChain) -> TextureView ---
 
-    SwapChainPresent :: proc(swapChain : SwapChain) ---
-
     TextureCreateView :: proc(
         texture : Texture,
         descriptor : ^TextureViewDescriptor,
@@ -1512,7 +1510,7 @@ foreign lib {
 
 }
 
-@(default_calling_convention="c")
+@(default_calling_convention="c", private)
 foreign lib {
     @(link_name="wgpuDeviceCreatePipelineLayout")
     DeviceCreatePipelineLayoutC :: proc(
@@ -1602,5 +1600,7 @@ foreign lib {
         commandEncoder : CommandEncoder,
         descriptor : ^RenderPassDescriptorC,
     ) -> RenderPassEncoder ---
-
+    
+    @(link_name="wgpuSwapChainPresent")
+    SwapChainPresentC :: proc(swapChain : SwapChain) ---
 }

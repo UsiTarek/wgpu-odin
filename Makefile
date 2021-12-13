@@ -51,7 +51,7 @@ CARGO_WGPU_NATIVE_PATH := thirdparty/wgpu-native
 
 ifeq ($(detected_OS),Windows)
 CARGO_BUILD_WGPU_NATIVE_POST := && cp -u 																		  \
-								$(CARGO_WGPU_NATIVE_PATH)/target/$(CARGO_TARGET)/$(CARGO_PROFILE)/wgpu_native.lib \
+								$(CARGO_WGPU_NATIVE_PATH)/target/$(CARGO_TARGET)/$(Profile)/wgpu_native.lib \
 								wgpu_native/wgpu_native.lib
 endif
 
@@ -74,7 +74,7 @@ else ifeq ($(TARGET_ARCH),aarch64)
 ODIN_HOMEBREW_PATH := /opt/homebrew
 endif
 
-ODIN_EXTRA_LINKER_FLAGS := -L$(CARGO_WGPU_NATIVE_PATH)/target/$(CARGO_TARGET)/$(CARGO_PROFILE)/ \
+ODIN_EXTRA_LINKER_FLAGS := -L$(CARGO_WGPU_NATIVE_PATH)/target/$(CARGO_TARGET)/$(Profile)/ \
 					  	   -L$(ODIN_HOMEBREW_PATH)/opt/sdl2/lib/
 else ifeq ($(detected_OS),Windows)
 ODIN_DEFAULT_WIN32_LIBS := Ws2_32.lib AdvAPI32.lib Userenv.lib Bcrypt.lib User32.lib  
