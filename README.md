@@ -1,9 +1,8 @@
 # wgpu-odin
  
- ## Work In Progress.
  WGPU bindings for Odin.
  
- ## Platforms
+ ## Platforms ( WIP ).
  Windows x86_64 : ✅
  
  MacOS x86_64 : ✅ (For M1, use Rosetta for now)
