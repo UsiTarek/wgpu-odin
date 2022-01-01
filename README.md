@@ -3,7 +3,7 @@
  WGPU bindings for Odin.
  
  ## Platforms ( WIP ).
- Windows x86_64 : ✅
+ Windows x86_64 : ⚠ (Makefile is kinda broken, working on it).
  
  MacOS x86_64 : ✅ (For M1, use Rosetta for now)
  
