@@ -52,7 +52,7 @@ CARGO_WGPU_NATIVE_PATH := thirdparty/wgpu-native
 ifeq ($(detected_OS),Windows)
 CARGO_BUILD_WGPU_NATIVE_POST := && cp -u 																		  \
 								$(CARGO_WGPU_NATIVE_PATH)/target/$(CARGO_TARGET)/$(CARGO_PROFILE)/wgpu_native.lib \
-								wgpu/wgpu_native.lib
+								wgpu_native/wgpu_native.lib
 endif
 
 CARGO_BUILD_WGPU_NATIVE := pushd $(CARGO_WGPU_NATIVE_PATH) && $(CARGO_BUILD) && popd $(CARGO_BUILD_WGPU_NATIVE_POST)
@@ -97,7 +97,7 @@ ODIN_EXAMPLE_BIN_PATH := bin/examples/$(CARGO_PROFILE)/$(ODIN_EXAMPLE_BIN_NAME)
 ODIN_RUN_EXAMPLE_CMD_PRE := mkdir -p $(ODIN_EXAMPLE_BIN_PATH)
 ODIN_RUN_EXAMPLE_CMD := $(ODIN_RUN_EXAMPLE_CMD_PRE) &&									\
 						odin run 														\
-						examples/$(ODIN_EXAMPLE_BIN_NAME)/$(ODIN_EXAMPLE_BIN_NAME).odin \
+						examples/$(ODIN_EXAMPLE_BIN_NAME)/$(ODIN_EXAMPLE_BIN_NAME).odin -file \
 						$(ODIN_PROFILE)													\
 						-target=$(TARGET_OS)_$(ODIN_TARGET_ARCH)  						\
 						-extra-linker-flags="$(ODIN_EXTRA_LINKER_FLAGS)" 				\
