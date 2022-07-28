@@ -1,6 +1,6 @@
 package wgpu
 
-when ODIN_OS == "windows" {
+when ODIN_OS == .Windows {
     foreign import lib "wgpu_native.lib"
 }else {
     foreign import lib "system:wgpu_native"

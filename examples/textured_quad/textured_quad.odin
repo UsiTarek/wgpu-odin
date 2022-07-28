@@ -8,8 +8,8 @@ import sdl "vendor:sdl2"
 import stbi "vendor:stb/image"
 import wgpu "../../wgpu"
 
-when ODIN_OS == "windows" {
-    import "core:sys/win32"
+when ODIN_OS == .Windows {
+    import win32 "core:sys/windows"
 }
 
 Vertex :: struct {
@@ -22,7 +22,7 @@ main :: proc () {
     assert(err == 0)
     
     window_flags : sdl.WindowFlags
-    when ODIN_OS == "darwin" {
+    when ODIN_OS == .Darwin {
         window_flags = sdl.WindowFlags{.METAL}
     }
     
@@ -46,7 +46,7 @@ main :: proc () {
     )
     wgpu.SetLogLevel(wgpu.LogLevel.Warn)
 
-    when ODIN_OS == "darwin" {
+    when ODIN_OS == .Darwin {
         metalView := sdl.Metal_CreateView(window)
         defer sdl.Metal_DestroyView(metalView)
         
@@ -60,11 +60,11 @@ main :: proc () {
             },
         })
     }
-    when ODIN_OS == "windows" {
+    when ODIN_OS == .Windows {
         wmInfo: sdl.SysWMinfo = ---
         sdl.GetWindowWMInfo(window, &wmInfo);
         hwnd := wmInfo.info.win.window;
-        hinstance := win32.get_module_handle_a(nil)
+        hinstance := win32.GetModuleHandleA(nil)
 
         surface := wgpu.InstanceCreateSurface(nil, &(wgpu.SurfaceDescriptor) {
             label = "Windows Surface",
@@ -360,7 +360,7 @@ main :: proc () {
     defer wgpu.BindGroupDrop(texture_bind_group)
     
     main_loop: for {
-        for e: sdl.Event; sdl.PollEvent(&e) != 0; {
+        for e: sdl.Event; sdl.PollEvent(&e); {
             #partial switch(e.type) {
                 case .QUIT:
                     break main_loop;
