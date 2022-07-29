@@ -52,7 +52,7 @@ CARGO_WGPU_NATIVE_PATH := thirdparty/wgpu-native
 ifeq ($(detected_OS),Windows)
 CARGO_BUILD_WGPU_NATIVE_POST := && cp -u 																		  \
 								$(CARGO_WGPU_NATIVE_PATH)/target/$(CARGO_TARGET)/$(CARGO_PROFILE)/wgpu_native.lib \
-								wgpu_native/wgpu_native.lib
+								wgpu/wgpu_native.lib
 endif
 
 CARGO_BUILD_WGPU_NATIVE := pushd $(CARGO_WGPU_NATIVE_PATH) && $(CARGO_BUILD) && popd $(CARGO_BUILD_WGPU_NATIVE_POST)
